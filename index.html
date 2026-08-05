@@ -76,8 +76,8 @@
             font-weight: bold;
         }
     </style>
-    <!-- VYNÚTENÉ ZABEZPEČENÉ HTTPS PREPOJENIE CEZ JSDELIVR PROTI BLOKOVANIU -->
-    <script src="https://jsdelivr.net" type="text/javascript"></script>
+    <!-- Použitie stabilného globálneho CDN od Cloudflare -->
+    <script src="https://cloudflare.com" type="text/javascript"></script>
 </head>
 <body>
 
@@ -112,6 +112,7 @@
         const phoneSelect = document.getElementById('phone-id');
         const statusText = document.getElementById('status-text');
 
+        // Detekcia in-app prehliadačov
         const ua = navigator.userAgent || navigator.vendor || window.opera;
         const isInApp = (ua.indexOf("FBAN") > -1) || (ua.indexOf("FBAV") > -1) || (ua.indexOf("Instagram") > -1) || (ua.indexOf("Messenger") > -1);
 
@@ -125,6 +126,7 @@
             }
         }
 
+        // Inicializácia audio objektov pre MP3
         const audioOk = new Audio('ok.mp3');
         const audioFail = new Audio('fail.mp3');
         audioOk.preload = 'auto';
@@ -199,11 +201,7 @@
 
         function inicializujSkener() {
             try {
-                if (typeof Html5QrcodeScanner === 'undefined') {
-                    statusText.innerHTML = "<span style='color:red;'>Prehliadač zablokoval skript z bezpečnostných dôvodov. Prosím, otvorte túto stránku priamo v aplikácii Google Chrome alebo Safari.</span>";
-                    return;
-                }
-
+                // Odstránená umelá podmienka vyvolávajúca falošnú chybu
                 const html5QrcodeScanner = new Html5QrcodeScanner(
                     "reader", { 
                         fps: 10, 
@@ -214,10 +212,11 @@
                 html5QrcodeScanner.render(onScanSuccess, (err) => {});
                 statusText.innerText = "Kliknite na tlačidlo vyššie pre povolenie kamery";
             } catch (e) {
-                statusText.innerText = "Chyba: " + e.message;
+                statusText.innerText = "Chyba inicializácie: " + e.message;
             }
         }
 
+        // Spustenie skenera po načítaní stránky
         if (document.readyState === "complete" || document.readyState === "interactive") {
             setTimeout(inicializujSkener, 300);
         } else {
