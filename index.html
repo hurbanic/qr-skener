@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Overovač</title>
+    <!-- Knižnica na skenovanie QR kódov zadarmo -->
+    <script src="https://unpkg.com"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            transition: background-color 0.3s ease;
+            background-color: #f0f0f0;
+        }
+        #setup {
+            margin-bottom: 20px;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        select {
+            font-size: 18px;
+            padding: 8px;
+            border-radius: 5px;
+        }
+        #reader {
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        #status-text {
+            font-size: 24px;
+            font-weight: bold;
+            margin-top: 20px;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="setup">
+        <label for="phone-id"><strong>Číslo tohto mobilu:</strong> </label>
+        <select id="phone-id" onchange="savePhoneId()">
+            <option value="">-- Vyber --</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+            <option value="9">9</option>
+            <option value="10">10</option>
+        </select>
+    </div>
+
+    <div id="reader"></div>
+    <div id="status-text">Pripravený na skenovanie</div>
+
+    <script>
+        let isScanning = true;
+        const phoneSelect = document.getElementById('phone-id');
+        const statusText = document.getElementById('status-text');
+
+        // Načítanie uloženého čísla mobilu z pamäte telefónu
+        if (localStorage.getItem('myPhoneId')) {
+            phoneSelect.value = localStorage.getItem('myPhoneId');
+        }
+
+        function savePhoneId() {
+            localStorage.setItem('myPhoneId', phoneSelect.value);
+        }
+
+        // Vytvorenie zvukových efektov (pípnutia) bez externých súborov
+        function playSound(type) {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(type === 'ok' ? 880 : 220, ctx.currentTime);
+            osc.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.2);
+        }
+
+        function onScanSuccess(decodedText, decodedResult) {
+            if (!isScanning) return;
+
+            const myNumber = phoneSelect.value;
+            if (!myNumber) {
+                alert('Najprv vyberte číslo tohto mobilu hore!');
+                return;
+            }
+
+            isScanning = false; // Dočasne zastavíme skenovanie, kým svieti farba
+            
+            // Očistenie textu z QR kódu od medzier
+            const scannedValue = decodedText.trim();
+
+            if (scannedValue === myNumber) {
+                // ZHODA -> ZELENÁ
+                document.body.style.backgroundColor = "#2ecc71";
+                statusText.innerText = "ZHODA (Číslo " + scannedValue + ")";
+                playSound('ok');
+            } else {
+                // NEZHODA -> ČERVENÁ
+                document.body.style.backgroundColor = "#e74c3c";
+                statusText.innerText = "NEZHODA (Kód obsahuje: " + scannedValue + ")";
+                playSound('fail');
+            }
+
+            // O 2 sekundy vráť všetko do pôvodného stavu pre ďalší sken
+            setTimeout(() => {
+                document.body.style.backgroundColor = "#f0f0f0";
+                statusText.innerText = "Pripravený na skenovanie";
+                isScanning = true;
+            }, 2000);
+        }
+
+        // Spustenie kamery
+        const html5QrcodeScanner = new Html5QrcodeScanner(
+            "reader", { fps: 10, qrbox: 250 }, /* verbose= */ false);
+        html5QrcodeScanner.render(onScanSuccess);
+    </script>
+</body>
+</html>
