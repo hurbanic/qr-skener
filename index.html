@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Overovač v2</title>
-    <!-- Opravená stabilná verzia skenera -->
-    <script src="https://unpkg.com"></script>
+    <title>QR Overovač v3</title>
+    <!-- OPRAVENÝ STABILNÝ ODKAZ NA KNIŽNICU -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -37,7 +37,7 @@
             background: #fff;
             border: 2px solid #ccc;
         }
-        /* Vynútenie viditeľnosti tlačidiel pre štart kamery */
+        /* Zvýraznenie tlačidiel pre štart kamery */
         #reader button {
             background-color: #007bff !important;
             color: white !important;
@@ -56,8 +56,9 @@
         }
         #error-log {
             color: red;
-            font-size: 12px;
+            font-size: 14px;
             margin-top: 10px;
+            padding: 10px;
         }
     </style>
 </head>
@@ -81,7 +82,7 @@
     </div>
 
     <div id="reader"></div>
-    <div id="status-text">Čakám na zapnutie kamery...</div>
+    <div id="status-text">Inicializácia...</div>
     <div id="error-log"></div>
 
     <script>
@@ -107,7 +108,7 @@
                 osc.connect(ctx.destination);
                 osc.start();
                 osc.stop(ctx.currentTime + 0.2);
-            } catch(e) { console.log("Audio chybka"); }
+            } catch(e) { console.log("Audio nedostupné"); }
         }
 
         function onScanSuccess(decodedText, decodedResult) {
@@ -139,25 +140,34 @@
             }, 2500);
         }
 
-        // Spustenie skenera s nastavením na zadnú kameru (environment)
-        setTimeout(() => {
-            try {
-                const html5QrcodeScanner = new Html5QrcodeScanner(
-                    "reader", { 
-                        fps: 10, 
-                        qrbox: { width: 250, height: 250 },
-                        rememberLastUsedCamera: true,
-                        supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
-                    }, false);
-                
-                html5QrcodeScanner.render(onScanSuccess, (err) => {
-                    // Ignorujeme priebežné chyby hľadania QR kódu v obraze
-                });
-                statusText.innerText = "Kliknite na modré tlačidlo štartu kamery";
-            } catch (e) {
-                errorLog.innerText = "Chyba inicializácie: " + e.message;
-            }
-        }, 500);
+        // Bezpečné načítanie skenera až po úplnom načítaní stránky
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                try {
+                    if (typeof Html5QrcodeScanner === 'undefined') {
+                        errorLog.innerText = "Knižnica sa nenačítala. Skontrolujte pripojenie na internet alebo obnovte stránku na tvrdo.";
+                        statusText.innerText = "Chyba načítania";
+                        return;
+                    }
+
+                    const html5QrcodeScanner = new Html5QrcodeScanner(
+                        "reader", { 
+                            fps: 10, 
+                            qrbox: { width: 250, height: 250 },
+                            rememberLastUsedCamera: true
+                        }, false);
+                    
+                    html5QrcodeScanner.render(onScanSuccess, (err) => {
+                        // ignorovať chyby pri hľadaní kódu
+                    });
+                    
+                    statusText.innerText = "Kliknite na tlačidlo povolenia kamery";
+                    errorLog.innerText = "";
+                } catch (e) {
+                    errorLog.innerText = "Chyba: " + e.message;
+                }
+            }, 500);
+        });
     </script>
 </body>
 </html>
