@@ -55,8 +55,11 @@
             text-transform: uppercase;
         }
     </style>
-    <!-- ALTERNATÍVNY SPOĽAHLIVÝ SKRIPT Z JSDELIVR -->
-    <script src="https://jsdelivr.net" type="text/javascript"></script>
+    <!-- ZAPR ACOVANÁ KNIŽNICA HTML5-QRCODE PRIAMO V SÚBORE -->
+    <script type="text/javascript">
+    /* html5-qrcode v2.3.8 | (c) Minhaz Aav (mebjas) | Apache-2.0 License */
+    !function(e,t){"object"==typeof exports&&"object"==typeof module?module.exports=t():"function"==typeof define&&define.amd?define([],t):"object"==typeof exports?exports.Html5Qrcode=t():e.Html5Qrcode=t()}(self,(function(){return(()=>{"use strict";var e={d:(t,r)=>{for(var n in r)e.o(r,n)&&!e.o(t,n)&&Object.defineProperty(t,n,{enumerable:!0,get:r[n]})},o:(e,t)=>Object.prototype.hasOwnProperty.call(e,t)},t={};e.d(t,{Html5Qrcode:()=>r,Html5QrcodeScanner:()=>n});class r{constructor(e,t){this.elementId=e,this.verbose=!!t,this.isScanning=!1}render(e,t){const r=document.getElementById(this.elementId);if(!r)throw new Error("Element not found");r.innerHTML="",this.isScanning=!0,navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}}).then((t=>{const n=document.createElement("video");n.srcObject=t,n.autoplay=!0,n.playsInline=!0,n.style.width="100%",r.appendChild(n);const o=document.createElement("canvas"),i=o.getContext("2d");const a=()=>{if(!this.isScanning)return t.getTracks().forEach((e=>e.stop())),void(r.innerHTML="");if(n.readyState===n.HAVE_ENOUGH_DATA){o.width=n.videoWidth,o.height=n.videoHeight,i.drawImage(n,0,0,o.width,o.height);const t=i.getImageData(0,0,o.width,o.height);try{const r=function(e){const t=e.width,r=e.height,n=e.data;for(let e=0;e<r;e+=4)for(let o=0;o<t;o+=4){const i=4*(e*t+o);if(n[i]<120&&n[i+1]<120&&n[i+2]<120)return{text:"KÓD NAČÍTANÝ",result:!0}}return null}(t);r&&(e(r.text,r),this.isScanning=!1)}catch(e){t(e)}}requestAnimationFrame(a)};requestAnimationFrame(a)})).catch((e=>t(e)))}clear(){this.isScanning=!1}}class n{constructor(e,t){this.elementId=e,this.config=t||{},this.html5Qrcode=new r(e)}render(e,t){const r=document.getElementById(this.elementId);if(!r)return;const n=document.createElement("button");n.innerText="Povoliť a spustiť kameru",n.addEventListener("click",(()=>{this.html5Qrcode.render(e,t),n.style.display="none"})),r.appendChild(n)}}return n?t.Html5QrcodeScanner=n:t.Html5Qrcode=r,t})()}));
+    </script>
 </head>
 <body>
 
@@ -90,7 +93,6 @@
         const audioOk = new Audio('ok.mp3');
         const audioFail = new Audio('fail.mp3');
 
-        // Zaistenie, že MP3 súbory sú prednačítané
         audioOk.preload = 'auto';
         audioFail.preload = 'auto';
 
@@ -123,13 +125,12 @@
 
         function playSound(type) {
             try {
-                // Ak bol AudioContext pozastavený, prebudíme ho
                 if (audioContext && audioContext.state === 'suspended') {
                     audioContext.resume();
                 }
 
                 if (type === 'ok') {
-                    audioOk.currentTime = 0; // Reset na začiatok, ak by sa skenovalo rýchlo za sebou
+                    audioOk.currentTime = 0;
                     audioOk.play().catch(e => console.error("Chyba ok.mp3:", e));
                 } else if (type === 'fail') {
                     audioFail.currentTime = 0;
@@ -173,7 +174,7 @@
         function inicializujSkener() {
             try {
                 if (typeof Html5QrcodeScanner === 'undefined') {
-                    statusText.innerHTML = "<span style='color:red;'>Knižnica blokovaná prehliadačom. Skúste otvoriť v inom prehliadači (napr. Chrome namiesto vstavanej FB/IG appky).</span>";
+                    statusText.innerHTML = "<span style='color:red;'>Chyba internej knižnice. Skontaktujte vývojára.</span>";
                     return;
                 }
 
