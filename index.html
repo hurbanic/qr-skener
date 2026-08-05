@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Overovač s MP3 zvukov</title>
+    <title>QR Overovač Stabilný</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -36,6 +36,7 @@
             border: 2px solid #ccc;
             min-height: 250px;
         }
+        /* Vynútené štýly pre modré tlačidlá skenera */
         #reader button {
             background-color: #007bff !important;
             color: white !important;
@@ -54,7 +55,8 @@
             text-transform: uppercase;
         }
     </style>
-    <script src="https://jsdelivr.net" type="text/javascript"></script>
+    <!-- NOVÝ, MAXIMÁLNE STABILNÝ ODKAZ OD CLOUDFLARE (CDNJS) -->
+    <script src="https://cloudflare.com" integrity="sha512-r6rDA7W6ZeQXYwQbZ5lyrERMep7nhgcfJAXHiE17z51KpGQtOXUjUPnL8EHOldwCxXO7HexM5B85gE6KA6nciA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 <body>
 
@@ -83,7 +85,7 @@
         const phoneSelect = document.getElementById('phone-id');
         const statusText = document.getElementById('status-text');
 
-        // Prednačítanie MP3 súborov z vášho servera
+        // Načítanie MP3 z vášho GitHubu
         const soundOk = new Audio('ok.mp3');
         const soundFail = new Audio('fail.mp3');
 
@@ -95,19 +97,16 @@
             localStorage.setItem('myPhoneId', phoneSelect.value);
         }
 
-        // Funkcia na prehratie MP3 súboru
         function playMp3(type) {
             try {
                 if (type === 'ok') {
-                    soundOk.currentTime = 0; // Vráti zvuk na začiatok, ak by hral znova
-                    soundOk.play().catch(e => console.log("Prehrávanie zablokované: ", e));
+                    soundOk.currentTime = 0;
+                    soundOk.play().catch(e => console.log("Audio block", e));
                 } else {
                     soundFail.currentTime = 0;
-                    soundFail.play().catch(e => console.log("Prehrávanie zablokované: ", e));
+                    soundFail.play().catch(e => console.log("Audio block", e));
                 }
-            } catch(e) { 
-                console.log("Chyba zvuku: " + e.message); 
-            }
+            } catch(e) { }
         }
 
         function onScanSuccess(decodedText, decodedResult) {
@@ -125,11 +124,11 @@
             if (scannedValue === myNumber) {
                 document.body.style.backgroundColor = "#2ecc71";
                 statusText.innerText = "ZHODA (Číslo " + scannedValue + ")";
-                playMp3('ok'); // Prehrá ok.mp3
+                playMp3('ok');
             } else {
                 document.body.style.backgroundColor = "#e74c3c";
                 statusText.innerText = "NEZHODA (Kód: " + scannedValue + ")";
-                playMp3('fail'); // Prehrá fail.mp3
+                playMp3('fail');
             }
 
             setTimeout(() => {
@@ -142,7 +141,7 @@
         function inicializujSkener() {
             try {
                 if (typeof Html5QrcodeScanner === 'undefined') {
-                    statusText.innerHTML = "<span style='color:red;'>Knižnica nedostupná. Obnovte stránku v prehliadači Chrome/Safari.</span>";
+                    statusText.innerHTML = "<span style='color:red;'>Chyba: Skript sa nepodarilo stiahnuť. Skontrolujte internet.</span>";
                     return;
                 }
 
@@ -154,9 +153,9 @@
                     }, false);
                 
                 html5QrcodeScanner.render(onScanSuccess, (err) => {});
-                statusText.innerText = "Kliknite na tlačidlo vyššie pre povolenie kamery";
+                statusText.innerText = "Kliknite na tlačidlo povolenia kamery";
                 
-                // Trik pre mobily: Kliknutím na povolenie kamery sa zároveň odomkne zvukový systém mobilu
+                // Aktivácia zvuku dotykom
                 document.getElementById('reader').addEventListener('click', () => {
                     soundOk.load();
                     soundFail.load();
