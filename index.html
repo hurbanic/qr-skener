@@ -76,12 +76,13 @@
             font-weight: bold;
         }
     </style>
-    <script src="https://unpkg.com" type="text/javascript"></script>
+    <!-- VYNÚTENÉ ZABEZPEČENÉ HTTPS PREPOJENIE CEZ JSDELIVR PROTI BLOKOVANIU -->
+    <script src="https://jsdelivr.net" type="text/javascript"></script>
 </head>
 <body>
 
     <div id="browser-warning">
-        ⚠️ Otvorili ste aplikáciu vnútri chatu (Messenger/FB), kde je blokovaná kamera aj zvuky!<br>
+        ⚠️ Otvorili ste aplikáciu vnútri chatu (Messenger/FB), kde môže byť blokovaná kamera aj zvuky!<br>
         <a id="open-browser-btn" href="#" target="_blank">KLIKNITE TU PRE OTVORENIE V CHROME / SAFARI</a>
     </div>
 
@@ -177,10 +178,8 @@
             }
 
             isScanning = false;
-            // Prevedie naskenovaný text na malé písmená a oseká prázdne znaky
             const scannedValue = decodedText.trim().toLowerCase();
 
-            // Porovnanie zhodnosti
             if (scannedValue === mySelectedString.toLowerCase()) {
                 document.body.style.backgroundColor = "#2ecc71";
                 statusText.innerText = "ZHODA (" + decodedText.trim() + ")";
@@ -201,7 +200,7 @@
         function inicializujSkener() {
             try {
                 if (typeof Html5QrcodeScanner === 'undefined') {
-                    statusText.innerHTML = "<span style='color:red;'>Prehliadač zablokoval skript. Prosím, otvorte túto stránku priamo v aplikácii Google Chrome alebo Safari.</span>";
+                    statusText.innerHTML = "<span style='color:red;'>Prehliadač zablokoval skript z bezpečnostných dôvodov. Prosím, otvorte túto stránku priamo v aplikácii Google Chrome alebo Safari.</span>";
                     return;
                 }
 
