@@ -82,12 +82,17 @@
 
     <script>
         let isScanning = true;
+        let audioContext = null;
         const phoneSelect = document.getElementById('phone-id');
         const statusText = document.getElementById('status-text');
 
-        // Prednačítanie audio súborov pre rýchlu odozvu bez meškania
+        // Inicializácia MP3 audio objektov
         const audioOk = new Audio('ok.mp3');
         const audioFail = new Audio('fail.mp3');
+
+        // Zaistenie, že MP3 súbory sú prednačítané
+        audioOk.preload = 'auto';
+        audioFail.preload = 'auto';
 
         if (localStorage.getItem('myPhoneId')) {
             phoneSelect.value = localStorage.getItem('myPhoneId');
@@ -95,16 +100,40 @@
 
         function savePhoneId() {
             localStorage.setItem('myPhoneId', phoneSelect.value);
+            initAudioContext();
         }
+
+        // Vynútené prebudenie zvuku na mobiloch pri prvom dotyku
+        function initAudioContext() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            
+            // Odomknutie oboch MP3 súborov tichým spustením a stopnutím
+            audioOk.play().then(() => { audioOk.pause(); audioOk.currentTime = 0; }).catch(() => {});
+            audioFail.play().then(() => { audioFail.pause(); audioFail.currentTime = 0; }).catch(() => {});
+        }
+
+        // Odpočúvanie dotyku kdekoľvek na obrazovke pre aktiváciu MP3
+        document.addEventListener('click', initAudioContext, { once: true });
+        document.addEventListener('touchstart', initAudioContext, { once: true });
 
         function playSound(type) {
             try {
+                // Ak bol AudioContext pozastavený, prebudíme ho
+                if (audioContext && audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+
                 if (type === 'ok') {
-                    audioOk.currentTime = 0; // Reset na začiatok, ak by zvuk ešte hral
-                    audioOk.play().catch(e => console.log("Audio block:", e));
+                    audioOk.currentTime = 0; // Reset na začiatok, ak by sa skenovalo rýchlo za sebou
+                    audioOk.play().catch(e => console.error("Chyba ok.mp3:", e));
                 } else if (type === 'fail') {
                     audioFail.currentTime = 0;
-                    audioFail.play().catch(e => console.log("Audio block:", e));
+                    audioFail.play().catch(e => console.error("Chyba fail.mp3:", e));
                 }
             } catch(e) { 
                 console.error("Audio error:", e);
