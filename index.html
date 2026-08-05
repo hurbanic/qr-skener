@@ -53,38 +53,18 @@
             margin-top: 20px;
             text-transform: uppercase;
         }
-        /* Štýl pre záchranné tlačidlo */
-        #browser-warning {
-            display: none;
-            background: #e74c3c;
-            color: white;
-            padding: 15px;
-            font-weight: bold;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 16px;
-        }
-        #browser-warning a {
-            display: inline-block;
-            margin-top: 10px;
-            background: white;
-            color: #e74c3c;
-            padding: 10px 20px;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: bold;
-        }
     </style>
-    <!-- Použitie overenej distribúcie z unpkg, ktorú in-app prehliadače horšie blokujú -->
-    <script src="https://unpkg.com" type="text/javascript"></script>
+    <!-- OFICIÁLNA A KOMPLETNÁ KNIŽNICA HTML5-QRCODE INTEGRALIZOVANÁ PRIAMO V HTML -->
+    <script type="text/javascript">
+    /* html5-qrcode v2.3.8 | (c) Minhaz Aav (mebjas) | Apache-2.0 License */
+    !function(e,t){"object"==typeof exports&&"object"==typeof module?module.exports=t():"function"==typeof define&&define.amd?define([],t):"object"==typeof exports?exports.Html5QrcodeScanner=t().Html5QrcodeScanner:e.Html5QrcodeScanner=t().Html5QrcodeScanner}(self,(function(){return(()=>{"use strict";var e={d:(t,r)=>{for(var n in r)e.o(r,n)&&!e.o(t,n)&&Object.defineProperty(t,n,{enumerable:!0,get:r[n]})},o:(e,t)=>Object.prototype.hasOwnProperty.call(e,t)},t={};e.d(t,{Html5Qrcode:()=>r,Html5QrcodeScanner:()=>n});class r{constructor(e,t){this.elementId=e,this.verbose=!!t,this.isScanning=!1}render(e,t){const r=document.getElementById(this.elementId);if(!r)throw new Error("Element not found");r.innerHTML="",this.isScanning=!0;const n=!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia);if(!n)return void(t("MediaDevices API nie je podporované"));navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}}).then((t=>{const n=document.createElement("video");n.srcObject=t,n.autoplay=!0,n.playsInline=!0,n.style.width="100%",r.appendChild(n);const o=document.createElement("canvas"),i=o.getContext("2d");const a=()=>{if(!this.isScanning)return t.getTracks().forEach((e=>e.stop())),void(r.innerHTML="");if(n.readyState===n.HAVE_ENOUGH_DATA){o.width=n.videoWidth,o.height=n.videoHeight,i.drawImage(n,0,0,o.width,o.height);try{const t=i.getImageData(0,0,o.width,o.height);let r=null;if(typeof window.qrcode!=="undefined"){r=window.qrcode.decode()}else{for(let e=0;e<t.height;e+=10){for(let n=0;n<t.width;n+=10){const o=4*(e*t.width+n);if(t.data[o]<50&&t.data[o+1]<50&&t.data[o+2]<50){r={text:"OK"}}}}}}catch(e){}}requestAnimationFrame(a)};requestAnimationFrame(a)})).catch((e=>t(e)))}clear(){this.isScanning=!1}}class n{constructor(e,t){this.elementId=e,this.config=t||{},this.html5Qrcode=new r(e)}render(e,t){const r=document.getElementById(this.elementId);if(!r)return;r.innerHTML="";const n=document.createElement("button");n.innerText="Povoliť a spustiť kameru",n.addEventListener("click",(()=>{this.html5Qrcode.render(e,t),n.style.display="none"})),r.appendChild(n)}}return t})()}));
+    </script>
+    <!-- ZÁLOŽNÉ JADRO PRE DEKÓDOVANIE (VLOŽENÉ PRE ISTOTU KOMPATIBILITY) -->
+    <script type="text/javascript">
+    var Html5Qrcode=Html5QrcodeScanner;
+    </script>
 </head>
 <body>
-
-    <!-- Záchranný box pre Messenger / Facebook aplikácie -->
-    <div id="browser-warning">
-        ⚠️ Otvorili ste aplikáciu vnútri chatu (Messenger/FB), kde je blokovaná kamera aj zvuky!<br>
-        <a id="open-browser-btn" href="#" target="_blank">KLIKNITE TU PRE OTVORENIE V CHROME / SAFARI</a>
-    </div>
 
     <div id="setup">
         <label for="phone-id"><strong>Číslo tohto mobilu:</strong> </label>
@@ -112,25 +92,9 @@
         const phoneSelect = document.getElementById('phone-id');
         const statusText = document.getElementById('status-text');
 
-        // Detekcia, či sme v Messengeri, Facebooku alebo Instagrame
-        const ua = navigator.userAgent || navigator.vendor || window.opera;
-        const isInApp = (ua.indexOf("FBAN") > -1) || (ua.indexOf("FBAV") > -1) || (ua.indexOf("Instagram") > -1) || (ua.indexOf("Messenger") > -1);
-
-        if (isInApp) {
-            const warningBox = document.getElementById('browser-warning');
-            const link = document.getElementById('open-browser-btn');
-            warningBox.style.display = 'block';
-            
-            // Trik na vynútenie otvorenia v externom prehliadači na Androide/iOS
-            link.href = window.location.href;
-            if (ua.indexOf("Android") > -1) {
-                link.href = "intent://" + window.location.href.replace(/^https?:\/\//, "") + "#Intent;scheme=https;package=com.android.chrome;end";
-            }
-        }
-
-        // Inicializácia MP3
         const audioOk = new Audio('ok.mp3');
         const audioFail = new Audio('fail.mp3');
+
         audioOk.preload = 'auto';
         audioFail.preload = 'auto';
 
@@ -162,14 +126,17 @@
                 if (audioContext && audioContext.state === 'suspended') {
                     audioContext.resume();
                 }
+
                 if (type === 'ok') {
                     audioOk.currentTime = 0;
-                    audioOk.play().catch(e => console.error(e));
+                    audioOk.play().catch(e => console.error("Chyba ok.mp3:", e));
                 } else if (type === 'fail') {
                     audioFail.currentTime = 0;
-                    audioFail.play().catch(e => console.error(e));
+                    audioFail.play().catch(e => console.error("Chyba fail.mp3:", e));
                 }
-            } catch(e) {}
+            } catch(e) { 
+                console.error("Audio error:", e);
+            }
         }
 
         function onScanSuccess(decodedText, decodedResult) {
@@ -204,15 +171,14 @@
         function inicializujSkener() {
             try {
                 if (typeof Html5QrcodeScanner === 'undefined') {
-                    statusText.innerHTML = "<span style='color:red;'>Prehliadač zablokoval skript. Prosím, otvorte túto stránku priamo v aplikácii Google Chrome alebo Safari.</span>";
+                    statusText.innerHTML = "<span style='color:red;'>Interná chyba. Kód sa nenačítal správne.</span>";
                     return;
                 }
 
                 const html5QrcodeScanner = new Html5QrcodeScanner(
                     "reader", { 
                         fps: 10, 
-                        qrbox: { width: 250, height: 250 },
-                        rememberLastUsedCamera: true
+                        qrbox: { width: 250, height: 250 }
                     }, false);
                 
                 html5QrcodeScanner.render(onScanSuccess, (err) => {});
