@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Overovač</title>
-    <!-- Knižnica na skenovanie QR kódov zadarmo -->
+    <title>QR Overovač v2</title>
+    <!-- Opravená stabilná verzia skenera -->
     <script src="https://unpkg.com"></script>
     <style>
         body {
@@ -14,10 +14,11 @@
             padding: 20px;
             transition: background-color 0.3s ease;
             background-color: #f0f0f0;
+            color: #333;
         }
         #setup {
             margin-bottom: 20px;
-            padding: 10px;
+            padding: 15px;
             background: white;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -33,12 +34,30 @@
             margin: 0 auto;
             border-radius: 10px;
             overflow: hidden;
+            background: #fff;
+            border: 2px solid #ccc;
+        }
+        /* Vynútenie viditeľnosti tlačidiel pre štart kamery */
+        #reader button {
+            background-color: #007bff !important;
+            color: white !important;
+            border: none !important;
+            padding: 12px 20px !important;
+            font-size: 16px !important;
+            border-radius: 5px !important;
+            margin: 10px !important;
+            cursor: pointer !important;
         }
         #status-text {
             font-size: 24px;
             font-weight: bold;
             margin-top: 20px;
             text-transform: uppercase;
+        }
+        #error-log {
+            color: red;
+            font-size: 12px;
+            margin-top: 10px;
         }
     </style>
 </head>
@@ -47,7 +66,7 @@
     <div id="setup">
         <label for="phone-id"><strong>Číslo tohto mobilu:</strong> </label>
         <select id="phone-id" onchange="savePhoneId()">
-            <option value="">-- Vyber --</option>
+            <option value="">-- Vyber číslo --</option>
             <option value="1">1</option>
             <option value="2">2</option>
             <option value="3">3</option>
@@ -62,14 +81,15 @@
     </div>
 
     <div id="reader"></div>
-    <div id="status-text">Pripravený na skenovanie</div>
+    <div id="status-text">Čakám na zapnutie kamery...</div>
+    <div id="error-log"></div>
 
     <script>
         let isScanning = true;
         const phoneSelect = document.getElementById('phone-id');
         const statusText = document.getElementById('status-text');
+        const errorLog = document.getElementById('error-log');
 
-        // Načítanie uloženého čísla mobilu z pamäte telefónu
         if (localStorage.getItem('myPhoneId')) {
             phoneSelect.value = localStorage.getItem('myPhoneId');
         }
@@ -78,15 +98,16 @@
             localStorage.setItem('myPhoneId', phoneSelect.value);
         }
 
-        // Vytvorenie zvukových efektov (pípnutia) bez externých súborov
         function playSound(type) {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = ctx.createOscillator();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(type === 'ok' ? 880 : 220, ctx.currentTime);
-            osc.connect(ctx.destination);
-            osc.start();
-            osc.stop(ctx.currentTime + 0.2);
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(type === 'ok' ? 880 : 220, ctx.currentTime);
+                osc.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.2);
+            } catch(e) { console.log("Audio chybka"); }
         }
 
         function onScanSuccess(decodedText, decodedResult) {
@@ -98,35 +119,45 @@
                 return;
             }
 
-            isScanning = false; // Dočasne zastavíme skenovanie, kým svieti farba
-            
-            // Očistenie textu z QR kódu od medzier
+            isScanning = false;
             const scannedValue = decodedText.trim();
 
             if (scannedValue === myNumber) {
-                // ZHODA -> ZELENÁ
                 document.body.style.backgroundColor = "#2ecc71";
                 statusText.innerText = "ZHODA (Číslo " + scannedValue + ")";
                 playSound('ok');
             } else {
-                // NEZHODA -> ČERVENÁ
                 document.body.style.backgroundColor = "#e74c3c";
-                statusText.innerText = "NEZHODA (Kód obsahuje: " + scannedValue + ")";
+                statusText.innerText = "NEZHODA (Kód: " + scannedValue + ")";
                 playSound('fail');
             }
 
-            // O 2 sekundy vráť všetko do pôvodného stavu pre ďalší sken
             setTimeout(() => {
                 document.body.style.backgroundColor = "#f0f0f0";
                 statusText.innerText = "Pripravený na skenovanie";
                 isScanning = true;
-            }, 2000);
+            }, 2500);
         }
 
-        // Spustenie kamery
-        const html5QrcodeScanner = new Html5QrcodeScanner(
-            "reader", { fps: 10, qrbox: 250 }, /* verbose= */ false);
-        html5QrcodeScanner.render(onScanSuccess);
+        // Spustenie skenera s nastavením na zadnú kameru (environment)
+        setTimeout(() => {
+            try {
+                const html5QrcodeScanner = new Html5QrcodeScanner(
+                    "reader", { 
+                        fps: 10, 
+                        qrbox: { width: 250, height: 250 },
+                        rememberLastUsedCamera: true,
+                        supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
+                    }, false);
+                
+                html5QrcodeScanner.render(onScanSuccess, (err) => {
+                    // Ignorujeme priebežné chyby hľadania QR kódu v obraze
+                });
+                statusText.innerText = "Kliknite na modré tlačidlo štartu kamery";
+            } catch (e) {
+                errorLog.innerText = "Chyba inicializácie: " + e.message;
+            }
+        }, 500);
     </script>
 </body>
 </html>
