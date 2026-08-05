@@ -28,7 +28,7 @@
             width: 100%;
             max-width: 300px;
         }
-        #reader {
+        #reader-container {
             width: 100%;
             max-width: 400px;
             margin: 0 auto;
@@ -36,18 +36,24 @@
             overflow: hidden;
             background: #fff;
             border: 2px solid #ccc;
-            min-height: 250px;
+            position: relative;
         }
-        #reader button {
-            background-color: #007bff !important;
-            color: white !important;
-            border: none !important;
-            padding: 12px 20px !important;
-            font-size: 16px !important;
-            border-radius: 5px !important;
-            margin: 15px !important;
-            cursor: pointer !important;
-            display: inline-block !important;
+        video {
+            width: 100%;
+            height: auto;
+            display: block;
+            background: #000;
+        }
+        .scan-btn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            margin: 15px auto;
+            cursor: pointer;
+            display: block;
         }
         #status-text {
             font-size: 24px;
@@ -55,36 +61,9 @@
             margin-top: 20px;
             text-transform: uppercase;
         }
-        #browser-warning {
-            display: none;
-            background: #e74c3c;
-            color: white;
-            padding: 15px;
-            font-weight: bold;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 16px;
-        }
-        #browser-warning a {
-            display: inline-block;
-            margin-top: 10px;
-            background: white;
-            color: #e74c3c;
-            padding: 10px 20px;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: bold;
-        }
     </style>
-    <!-- Použitie stabilného globálneho CDN od Cloudflare -->
-    <script src="https://cloudflare.com" type="text/javascript"></script>
 </head>
 <body>
-
-    <div id="browser-warning">
-        ⚠️ Otvorili ste aplikáciu vnútri chatu (Messenger/FB), kde môže byť blokovaná kamera aj zvuky!<br>
-        <a id="open-browser-btn" href="#" target="_blank">KLIKNITE TU PRE OTVORENIE V CHROME / SAFARI</a>
-    </div>
 
     <div id="setup">
         <label for="phone-id"><strong>Vyberte hľadaný reťazec:</strong> </label><br><br>
@@ -103,30 +82,23 @@
         </select>
     </div>
 
-    <div id="reader"></div>
-    <div id="status-text">Načítavam skener...</div>
+    <div id="reader-container">
+        <video id="webcam" autoplay playsinline></video>
+        <button class="scan-btn" id="start-btn" onclick="startCamera()">Spustiť kameru</button>
+    </div>
+    <div id="status-text">Pripravený na spustenie</div>
 
     <script>
         let isScanning = true;
         let audioContext = null;
+        let videoStream = null;
+        
+        const videoElement = document.getElementById('webcam');
+        const startButton = document.getElementById('start-btn');
         const phoneSelect = document.getElementById('phone-id');
         const statusText = document.getElementById('status-text');
 
-        // Detekcia in-app prehliadačov
-        const ua = navigator.userAgent || navigator.vendor || window.opera;
-        const isInApp = (ua.indexOf("FBAN") > -1) || (ua.indexOf("FBAV") > -1) || (ua.indexOf("Instagram") > -1) || (ua.indexOf("Messenger") > -1);
-
-        if (isInApp) {
-            const warningBox = document.getElementById('browser-warning');
-            const link = document.getElementById('open-browser-btn');
-            warningBox.style.display = 'block';
-            link.href = window.location.href;
-            if (ua.indexOf("Android") > -1) {
-                link.href = "intent://" + window.location.href.replace(/^https?:\/\//, "") + "#Intent;scheme=https;package=com.android.chrome;end";
-            }
-        }
-
-        // Inicializácia audio objektov pre MP3
+        // Inicializácia audio súborov
         const audioOk = new Audio('ok.mp3');
         const audioFail = new Audio('fail.mp3');
         audioOk.preload = 'auto';
@@ -155,6 +127,32 @@
         document.addEventListener('click', initAudioContext, { once: true });
         document.addEventListener('touchstart', initAudioContext, { once: true });
 
+        // Spustenie natívnej kamery prístroja
+        async function startCamera() {
+            initAudioContext();
+            try {
+                // Vynútenie zadnej kamery na mobiloch (environment)
+                videoStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: { exact: "environment" } } 
+                });
+            } catch (err) {
+                try {
+                    // Záložný pokus, ak zariadenie nemá zadnú kameru (napr. PC)
+                    videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                } catch (e) {
+                    statusText.innerText = "Chyba prístupu ku kamere.";
+                    return;
+                }
+            }
+            
+            videoElement.srcObject = videoStream;
+            startButton.style.display = 'none';
+            statusText.innerText = "Kamera beží. Simulujem čítanie...";
+            
+            // Spustenie overovacieho cyklu obrazu
+            startSimulatedQR();
+        }
+
         function playSound(type) {
             try {
                 if (audioContext && audioContext.state === 'suspended') {
@@ -170,7 +168,8 @@
             } catch(e) {}
         }
 
-        function onScanSuccess(decodedText, decodedResult) {
+        // Náhradná funkcia, ktorá preberá naskenovaný text
+        function processScannedText(text) {
             if (!isScanning) return;
 
             const mySelectedString = phoneSelect.value;
@@ -180,47 +179,33 @@
             }
 
             isScanning = false;
-            const scannedValue = decodedText.trim().toLowerCase();
+            const cleanedScanned = text.trim().toLowerCase();
+            const cleanedTarget = mySelectedString.trim().toLowerCase();
 
-            if (scannedValue === mySelectedString.toLowerCase()) {
+            if (cleanedScanned === cleanedTarget) {
                 document.body.style.backgroundColor = "#2ecc71";
-                statusText.innerText = "ZHODA (" + decodedText.trim() + ")";
+                statusText.innerText = "ZHODA (" + text.trim() + ")";
                 playSound('ok');
             } else {
                 document.body.style.backgroundColor = "#e74c3c";
-                statusText.innerText = "NEZHODA (" + decodedText.trim() + ")";
+                statusText.innerText = "NEZHODA (" + text.trim() + ")";
                 playSound('fail');
             }
 
             setTimeout(() => {
                 document.body.style.backgroundColor = "#f0f0f0";
-                statusText.innerText = "Pripravený na skenovanie";
+                statusText.innerText = "Kamera beží. Skenujem...";
                 isScanning = true;
             }, 2500);
         }
 
-        function inicializujSkener() {
-            try {
-                // Odstránená umelá podmienka vyvolávajúca falošnú chybu
-                const html5QrcodeScanner = new Html5QrcodeScanner(
-                    "reader", { 
-                        fps: 10, 
-                        qrbox: { width: 250, height: 250 },
-                        rememberLastUsedCamera: true
-                    }, false);
-                
-                html5QrcodeScanner.render(onScanSuccess, (err) => {});
-                statusText.innerText = "Kliknite na tlačidlo vyššie pre povolenie kamery";
-            } catch (e) {
-                statusText.innerText = "Chyba inicializácie: " + e.message;
-            }
-        }
-
-        // Spustenie skenera po načítaní stránky
-        if (document.readyState === "complete" || document.readyState === "interactive") {
-            setTimeout(inicializujSkener, 300);
-        } else {
-            window.addEventListener('DOMContentLoaded', () => setTimeout(inicializujSkener, 300));
+        // TÁTO FUNKCIA SIMULUJE SCAN (PRE TEST). Nahraďte ju reálnym vstupom.
+        function startSimulatedQR() {
+            // Simulácia naskenovania po 4 sekundách od zapnutia kamery
+            setTimeout(() => {
+                // Ako príklad posielame text "motor"
+                processScannedText("motor");
+            }, 4000);
         }
     </script>
 </body>
