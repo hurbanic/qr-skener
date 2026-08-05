@@ -54,15 +54,8 @@
             text-transform: uppercase;
         }
     </style>
-    <!-- OFICIÁLNA A KOMPLETNÁ KNIŽNICA HTML5-QRCODE INTEGRALIZOVANÁ PRIAMO V HTML -->
-    <script type="text/javascript">
-    /* html5-qrcode v2.3.8 | (c) Minhaz Aav (mebjas) | Apache-2.0 License */
-    !function(e,t){"object"==typeof exports&&"object"==typeof module?module.exports=t():"function"==typeof define&&define.amd?define([],t):"object"==typeof exports?exports.Html5QrcodeScanner=t().Html5QrcodeScanner:e.Html5QrcodeScanner=t().Html5QrcodeScanner}(self,(function(){return(()=>{"use strict";var e={d:(t,r)=>{for(var n in r)e.o(r,n)&&!e.o(t,n)&&Object.defineProperty(t,n,{enumerable:!0,get:r[n]})},o:(e,t)=>Object.prototype.hasOwnProperty.call(e,t)},t={};e.d(t,{Html5Qrcode:()=>r,Html5QrcodeScanner:()=>n});class r{constructor(e,t){this.elementId=e,this.verbose=!!t,this.isScanning=!1}render(e,t){const r=document.getElementById(this.elementId);if(!r)throw new Error("Element not found");r.innerHTML="",this.isScanning=!0;const n=!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia);if(!n)return void(t("MediaDevices API nie je podporované"));navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}}).then((t=>{const n=document.createElement("video");n.srcObject=t,n.autoplay=!0,n.playsInline=!0,n.style.width="100%",r.appendChild(n);const o=document.createElement("canvas"),i=o.getContext("2d");const a=()=>{if(!this.isScanning)return t.getTracks().forEach((e=>e.stop())),void(r.innerHTML="");if(n.readyState===n.HAVE_ENOUGH_DATA){o.width=n.videoWidth,o.height=n.videoHeight,i.drawImage(n,0,0,o.width,o.height);try{const t=i.getImageData(0,0,o.width,o.height);let r=null;if(typeof window.qrcode!=="undefined"){r=window.qrcode.decode()}else{for(let e=0;e<t.height;e+=10){for(let n=0;n<t.width;n+=10){const o=4*(e*t.width+n);if(t.data[o]<50&&t.data[o+1]<50&&t.data[o+2]<50){r={text:"OK"}}}}}}catch(e){}}requestAnimationFrame(a)};requestAnimationFrame(a)})).catch((e=>t(e)))}clear(){this.isScanning=!1}}class n{constructor(e,t){this.elementId=e,this.config=t||{},this.html5Qrcode=new r(e)}render(e,t){const r=document.getElementById(this.elementId);if(!r)return;r.innerHTML="";const n=document.createElement("button");n.innerText="Povoliť a spustiť kameru",n.addEventListener("click",(()=>{this.html5Qrcode.render(e,t),n.style.display="none"})),r.appendChild(n)}}return t})()}));
-    </script>
-    <!-- ZÁLOŽNÉ JADRO PRE DEKÓDOVANIE (VLOŽENÉ PRE ISTOTU KOMPATIBILITY) -->
-    <script type="text/javascript">
-    var Html5Qrcode=Html5QrcodeScanner;
-    </script>
+    <!-- NAJSPOĽAHLIVEJŠIA OFICIÁLNA KNIŽNICA OD CLOUDFLARE (NEMOŽNO ZABLOKOVAŤ) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js" type="text/javascript"></script>
 </head>
 <body>
 
@@ -92,6 +85,7 @@
         const phoneSelect = document.getElementById('phone-id');
         const statusText = document.getElementById('status-text');
 
+        // Inicializácia vašich vlastných MP3
         const audioOk = new Audio('ok.mp3');
         const audioFail = new Audio('fail.mp3');
 
@@ -107,6 +101,7 @@
             initAudioContext();
         }
 
+        // Prebudenie zvuku pre mobilné prehliadače pri interakcii
         function initAudioContext() {
             if (!audioContext) {
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -114,10 +109,12 @@
             if (audioContext.state === 'suspended') {
                 audioContext.resume();
             }
+            // Tiché spustenie a reset na odomknutie kanálu
             audioOk.play().then(() => { audioOk.pause(); audioOk.currentTime = 0; }).catch(() => {});
             audioFail.play().then(() => { audioFail.pause(); audioFail.currentTime = 0; }).catch(() => {});
         }
 
+        // Odpočúvanie prvého kliku na displej kvôli zvuku
         document.addEventListener('click', initAudioContext, { once: true });
         document.addEventListener('touchstart', initAudioContext, { once: true });
 
@@ -171,14 +168,15 @@
         function inicializujSkener() {
             try {
                 if (typeof Html5QrcodeScanner === 'undefined') {
-                    statusText.innerHTML = "<span style='color:red;'>Interná chyba. Kód sa nenačítal správne.</span>";
+                    statusText.innerHTML = "<span style='color:red;'>Knižnica blokovaná. Otvorte web v bežnom prehliadači Chrome/Safari, nie v chate (FB/Messenger).</span>";
                     return;
                 }
 
                 const html5QrcodeScanner = new Html5QrcodeScanner(
                     "reader", { 
                         fps: 10, 
-                        qrbox: { width: 250, height: 250 }
+                        qrbox: { width: 250, height: 250 },
+                        rememberLastUsedCamera: true
                     }, false);
                 
                 html5QrcodeScanner.render(onScanSuccess, (err) => {});
